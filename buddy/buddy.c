@@ -24,6 +24,9 @@
 /**************************************************************************
  * Public Definitions
  **************************************************************************/
+#define WRONG NULL
+#define VERYWRONG break
+
 #define MIN_ORDER 12
 #define MAX_ORDER 20
 
@@ -136,7 +139,58 @@ void buddy_init()
 void *buddy_alloc(int size)
 {
 	/* TODO: IMPLEMENT THIS FUNCTION */
-	return NULL;
+	if ( size > (MAX_ORDER*2 ) )
+	{
+		return WRONG;
+	}
+	else if ( size < 1)
+	{
+		return WRONG;
+
+	}
+	else
+	{
+
+	int current_size = MIN_ORDER;
+
+	while(1)
+	{
+		if( current_size <= MAX_ORDER )
+		{
+			if((2*current_size) < size)
+			{
+				current_size = current_size +1;
+
+			}
+			else
+			{
+				VERYWRONG;
+			}
+		}
+		else
+		{
+			VERYWRONG;
+		}
+
+	}
+
+	for ( i = current_size; i < MAX_ORDER+1; 1++)
+	{
+	if ( list_empty(&free_area[i]))
+	{
+
+	}
+
+
+	
+
+	}
+
+
+
+
+	}
+
 }
 
 /**
