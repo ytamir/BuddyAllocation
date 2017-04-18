@@ -50,7 +50,10 @@
  **************************************************************************/
 typedef struct {
 	struct list_head list;
+	int block_size;
 	/* TODO: DECLARE NECESSARY MEMBER VARIABLES */
+	int page_index;
+	char* page_address;
 } page_t;
 
 /**************************************************************************
