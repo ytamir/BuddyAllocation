@@ -4,6 +4,7 @@
  * For the list library usage, see http://www.mcs.anl.gov/~kazutomo/list/
  */
 
+
 /**************************************************************************
  * Conditional Compilation Options
  **************************************************************************/
@@ -14,6 +15,8 @@
  **************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
+
 
 #include "buddy.h"
 #include "list.h"
@@ -51,9 +54,9 @@
 typedef struct {
 	struct list_head list;
 	int block_size;
-	/* TODO: DECLARE NECESSARY MEMBER VARIABLES */
+	/* TODO: DECLARE NECESSARY MEMBER VARIABLsES */
 	int page_index;
-	char* page_address;
+	char* page_address;s
 } page_t;
 
 /**************************************************************************
@@ -82,9 +85,25 @@ page_t g_pages[(1<<MAX_ORDER)/PAGE_SIZE];
 void buddy_init()
 {
 	int i;
-	int n_pages = (1<<MAX_ORDER) / PAGE_SIZE;
-	for (i = 0; i < n_pages; i++) {
+	int number_pages = (1<<MAX_ORDER) / PAGE_SIZE;
+	for (i = 0; i < number_pages; i++) {
 		/* TODO: INITIALIZE PAGE STRUCTURES */
+		do {
+		        (&g_pages[i].list)->next = (&g_pages[i].list);
+			(&g_pages[i].list)->prev = (&g_pages[i].list);
+			if ( i == 0)
+			{
+				g_pages[i].block_size = MAX_ORDER;
+			}
+			else
+			{
+				g_pages[i].block_size = INT_MIN;
+			}
+			g_pages[i].page_index = i;
+			g_pages[i].page_address = PAGE_TO_ADDR(i);
+
+		} while (0)
+
 	}
 
 	/* initialize freelist */
@@ -94,6 +113,10 @@ void buddy_init()
 
 	/* add the entire memory as a freeblock */
 	list_add(&g_pages[0].list, &free_area[MAX_ORDER]);
+
+
+
+
 }
 
 /**
