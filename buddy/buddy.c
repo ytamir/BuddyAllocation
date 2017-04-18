@@ -59,7 +59,7 @@ typedef struct {
 	int block_size;
 	/* TODO: DECLARE NECESSARY MEMBER VARIABLsES */
 	int page_index;
-	char* page_address;s
+	char* page_address;
 } page_t;
 
 /**************************************************************************
@@ -87,12 +87,11 @@ page_t g_pages[(1<<MAX_ORDER)/PAGE_SIZE];
  */
 void buddy_init()
 {
-	int i;
 	int number_pages = (1<<MAX_ORDER) / PAGE_SIZE;
-	for (i = 0; i < number_pages; i++) {
+	for (int i = 0; i < number_pages; i++) {
 		/* TODO: INITIALIZE PAGE STRUCTURES */
-		do {
-		        (&g_pages[i].list)->next = (&g_pages[i].list);
+
+		    (&g_pages[i].list)->next = (&g_pages[i].list);
 			(&g_pages[i].list)->prev = (&g_pages[i].list);
 			if ( i == 0)
 			{
@@ -105,12 +104,10 @@ void buddy_init()
 			g_pages[i].page_index = i;
 			g_pages[i].page_address = PAGE_TO_ADDR(i);
 
-		} while (0)
-
 	}
 
 	/* initialize freelist */
-	for (i = MIN_ORDER; i <= MAX_ORDER; i++) {
+	for (int i = MIN_ORDER; i <= MAX_ORDER; i++) {
 		INIT_LIST_HEAD(&free_area[i]);
 	}
 
@@ -139,59 +136,54 @@ void buddy_init()
 void *buddy_alloc(int size)
 {
 	/* TODO: IMPLEMENT THIS FUNCTION */
-	if ( size > (MAX_ORDER*2 ) )
-	{
-		return WRONG;
+
+	//Check if the size is possible
+	if(size > order_to_bytes(MAX_ORDER)){
+		return NULL;
 	}
-	else if ( size < 1)
-	{
-		return WRONG;
 
+	/* Used to store the minimal allocation and order of said allocation */
+	int smallest_alloc = order_to_bytes(MIN_ORDER);
+	int smallest_order = MIN_ORDER;
+
+	while(size > smallest_alloc && smallest_order <= MAX_ORDER){
+		smallest_order++;
+		smallest_alloc = order_to_bytes(smallest_order);
 	}
-	else
-	{
 
-	int current_size = MIN_ORDER;
+	/* For each memory size possible, try to allocate or split up memory */
+	for(int i=smallest_order; i<= MAX_ORDER;i++){
 
-	while(1)
-	{
-		if( current_size <= MAX_ORDER )
-		{
-			if((2*current_size) < size)
-			{
-				current_size = current_size +1;
+		/**
+		 *	If there is an available block of the right size, start allocating
+		 *
+		 *	Note: the for loop starts with the smallest size possible and goes
+		 *	up to the greatest size possible
+		 */
+		if(!list_empty(&free_area[i])){
+
+			/* Variables used to partition */
+			page_t *left_page;
+			page_t *left_page;
+
+			/* If the block is the same size as what we need it's easy */
+			if(i == smallest_order){
+				left_page = list_entry(free_)
+			}
+			/* Otherwise we have to split up the block recursively */
+			else{
 
 			}
-			else
-			{
-				VERYWRONG;
-			}
 		}
-		else
-		{
-			VERYWRONG;
-		}
-
-	}
-
-	for ( i = current_size; i < MAX_ORDER+1; 1++)
-	{
-	if ( list_empty(&free_area[i]))
-	{
-
-	}
-
-
-	
-
-	}
-
-
-
-
 	}
 
 }
+
+
+int order_to_bytes(int order){
+	return (1 << order);
+}
+
 
 /**
  * Free an allocated memory block.
