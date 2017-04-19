@@ -1,0 +1,3 @@
+A = alloc(150K)
+B = alloc(300K)
+C = alloc(50K)
