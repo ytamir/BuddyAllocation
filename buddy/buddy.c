@@ -141,6 +141,10 @@ void *buddy_alloc(int size)
 	if(size > order_to_bytes(MAX_ORDER)){
 		return NULL;
 	}
+	else if (size < 1)
+	{
+		return NULL;
+	}
 
 	/* Used to store the minimal allocation and order of said allocation */
 	int smallest_alloc = order_to_bytes(MIN_ORDER);
@@ -164,18 +168,27 @@ void *buddy_alloc(int size)
 
 			/* Variables used to partition */
 			page_t *left_page;
-			page_t *left_page;
+			page_t *right_page;
+
 
 			/* If the block is the same size as what we need it's easy */
 			if(i == smallest_order){
-				left_page = list_entry(free_)
+				left_page = list_entry(free_area[i].next, page_t, list);
+				list_del(&(left->list));
 			}
 			/* Otherwise we have to split up the block recursively */
 			else{
+				left_page = &g_pages[ADDR_TO_PAGE(buddy_alloc(order_to_bytes(size_order+1)))];
+				int page_index = left->page_index + (order_to_bytes(size_order)/PAGE_SIZE);
+				right_page = &g_pages[page_index];
+				list_add(&(right_page->list), &free_area[size_order]);
 
 			}
+			left_page->block_size = size_order;
+			return PAGE_TO_ADDR (left_page->page_index);
 		}
 	}
+	return NULL;
 
 }
 
