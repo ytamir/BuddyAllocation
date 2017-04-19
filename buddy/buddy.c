@@ -8,7 +8,7 @@
 /**************************************************************************
  * Conditional Compilation Options
  **************************************************************************/
-#define USE_DEBUG 0
+#define USE_DEBUG 1
 
 /**************************************************************************
  * Included Files
@@ -87,6 +87,13 @@ page_t g_pages[(1<<MAX_ORDER)/PAGE_SIZE];
  */
 void buddy_init()
 {
+	#if USE_DEBUG
+		printf("%s\n", "2");
+	#endif
+
+
+
+
 	int number_pages = (1<<MAX_ORDER) / PAGE_SIZE;
 	for (int i = 0; i < number_pages; i++) {
 		/* TODO: INITIALIZE PAGE STRUCTURES */
@@ -135,9 +142,19 @@ void buddy_init()
  */
 void *buddy_alloc(int size)
 {
+	#if USE_DEBUG
+		printf("%s\n", "1");
+	#endif
+
 	/* TODO: IMPLEMENT THIS FUNCTION */
 
 	//Check if the size is possible
+	#if USE_DEBUG
+		printf("%s\n%i\n","Size:",size );
+	#endif
+
+	//printf("%s\n%i\n","MAX_ORDER:",MAX_ORDER );
+
 	if(size > order_to_bytes(MAX_ORDER)){
 		return NULL;
 	}
@@ -151,6 +168,11 @@ void *buddy_alloc(int size)
 	int smallest_order = MIN_ORDER;
 
 	while(size > smallest_alloc && smallest_order <= MAX_ORDER){
+		#if USE_DEBUG
+		printf("%s\n%i\n","smallest_order:",smallest_order );
+		printf("%s\n%i\n","smallest_alloc:",smallest_alloc );
+		#endif
+
 		smallest_order++;
 		smallest_alloc = order_to_bytes(smallest_order);
 	}
@@ -164,6 +186,11 @@ void *buddy_alloc(int size)
 		 *	Note: the for loop starts with the smallest size possible and goes
 		 *	up to the greatest size possible
 		 */
+		 #if USE_DEBUG
+	 		printf("%s\n%i\n","i:",i );
+	 	 #endif
+
+
 		if(!list_empty(&free_area[i])){
 
 			/* Variables used to partition */
@@ -172,22 +199,44 @@ void *buddy_alloc(int size)
 
 
 			/* If the block is the same size as what we need it's easy */
+			#if USE_DEBUG
+			      printf("%s\n", "3");
+			#endif
 			if(i == smallest_order){
+				#if USE_DEBUG
+				      printf("%s\n", "4");
+				#endif
 				left_page = list_entry(free_area[i].next, page_t, list);
 				list_del(&(left_page->list));
+				#if USE_DEBUG
+				      printf("%s\n", "5");
+				#endif
 			}
 			/* Otherwise we have to split up the block recursively */
 			else{
+				#if USE_DEBUG
+				      printf("%s\n", "6");
+				#endif
 				left_page = &g_pages[ADDR_TO_PAGE(buddy_alloc(order_to_bytes(smallest_order+1)))];
 				int page_index = left_page->page_index + (order_to_bytes(smallest_order)/PAGE_SIZE);
 				right_page = &g_pages[page_index];
 				list_add(&(right_page->list), &free_area[smallest_order]);
+				#if USE_DEBUG
+				      printf("%s\n", "7");
+				#endif
 
 			}
+			#if USE_DEBUG
+			      printf("%s\n", "8");
+			#endif
 			left_page->block_size = smallest_order;
 			return PAGE_TO_ADDR (left_page->page_index);
+
 		}
 	}
+	#if USE_DEBUG
+	      printf("%s\n", "10");
+	#endif
 	return NULL;
 
 }
@@ -210,26 +259,46 @@ int order_to_bytes(int order){
 void buddy_free(void *addr)
 {
 	/* TODO: IMPLEMENT THIS FUNCTION */
+	#if USE_DEBUG
+	      printf("%s\n", "11");
+	#endif
 
 	page_t * page = NULL;
 
 	struct list_head* current_list;
 
 	int count = 0;
+	#if USE_DEBUG
+	      printf("%s\n", "12");
+	#endif
 	while(1)
 	{
 		page = NULL;
 
-
+		#if USE_DEBUG
+		      printf("%s\n", "13");
+		#endif
 		list_for_each(current_list, &free_area[g_pages[ADDR_TO_PAGE(addr)].block_size + count ])
 		{
+			#if USE_DEBUG
+			      printf("%s\n", "14");
+			#endif
 			page = list_entry(current_list, page_t, list);
-			if (page = NULL)
+			#if USE_DEBUG
+			      printf("%s\n", "15");
+			#endif
+			if (page == NULL)
 			{
+				#if USE_DEBUG
+				      printf("%s\n", "16");
+				#endif
 				break;
 			}
 			else if (page->page_address == BUDDY_ADDR(addr , g_pages[ADDR_TO_PAGE(addr)].block_size + count))
 			{
+				#if USE_DEBUG
+				      printf("%s\n", "17");
+				#endif
 				break;
 			}
 
@@ -237,26 +306,46 @@ void buddy_free(void *addr)
 
 		if ( page == NULL )
 		{
+			#if USE_DEBUG
+			      printf("%s\n", "18");
+			#endif
 			g_pages[ADDR_TO_PAGE(addr)].block_size = -1;
 			list_add(&g_pages[ADDR_TO_PAGE(addr)].list, &free_area[g_pages[ADDR_TO_PAGE(addr)].block_size + count]);
+			#if USE_DEBUG
+			      printf("%s\n", "19");
+			#endif
 			return;
 
 		}
 		else if ( page->page_address != BUDDY_ADDR(addr, g_pages[ADDR_TO_PAGE(addr)].block_size + count))
 		{
+			#if USE_DEBUG
+			      printf("%s\n", "20");
+			#endif
 			g_pages[ADDR_TO_PAGE(addr)].block_size = INT_MIN;
 			list_add(&g_pages[ADDR_TO_PAGE(addr)].list, &free_area[g_pages[ADDR_TO_PAGE(addr)].block_size + count]);
+			#if USE_DEBUG
+			      printf("%s\n", "21");
+			#endif
 			return;
 		}
 
-
+		#if USE_DEBUG
+		      printf("%s\n", "22");
+		#endif
 		if( (char*) addr > page->page_address )
 		{
+			#if USE_DEBUG
+			      printf("%s\n", "23");
+			#endif
 			addr = page->page_address;
 
 		}
-		list_del(&(page->list));
 
+		list_del(&(page->list));
+		#if USE_DEBUG
+		      printf("%s\n", "24");
+		#endif
 
 
 
