@@ -210,6 +210,62 @@ int order_to_bytes(int order){
 void buddy_free(void *addr)
 {
 	/* TODO: IMPLEMENT THIS FUNCTION */
+
+	page_t * page = NULL;
+
+	struct list_head current_list;
+
+	int count = 0;
+	while(1)
+	{
+		page = NULL;
+
+
+		list_for_each(current_list, &free_area[g_pages[ADDR_TO_PAGE(addr).block_size + count ]])
+		{
+			page = list_entry(current_list, page_t, list);
+			if (page = NULL)
+			{
+				break;
+			}
+			else if (page->page_address == BUDDY_ADDR(addr , g_pages[ADDR_TO_PAGE(addr).block_size + count]))
+			{
+				break;
+			}
+
+		}
+
+		if ( page == NULL )
+		{
+			g_pages[ADDR_TO_PAGE(addr)].block_size = -1;
+			list_add(&g_pages[ADDR_TO_PAGE(addr)].list, &free_area[ADDR_TO_PAGE(addr).block_size + count]);
+			return void;
+
+		}
+		else if ( page->page_address != BUDDY_ADDR(addr, ADDR_TO_PAGE(addr).block_size + count))
+		{
+			g_pages[ADDR_TO_PAGE(addr).block_size + count].block_size = INT_MIN;
+			list_add(&g_pages[ADDR_TO_PAGE(addr)].list, &free_area[ADDR_TO_PAGE(addr).block_size + count]);
+			return void;
+		}
+
+
+		if( (char*) addr > page->page_address )
+		{
+			addr = page->page_address;
+
+		}
+		list_del(&(page->list));
+
+
+
+
+
+
+
+
+		count++;
+	}
 }
 
 /**
