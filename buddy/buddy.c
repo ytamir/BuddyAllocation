@@ -174,17 +174,17 @@ void *buddy_alloc(int size)
 			/* If the block is the same size as what we need it's easy */
 			if(i == smallest_order){
 				left_page = list_entry(free_area[i].next, page_t, list);
-				list_del(&(left->list));
+				list_del(&(left_page->list));
 			}
 			/* Otherwise we have to split up the block recursively */
 			else{
-				left_page = &g_pages[ADDR_TO_PAGE(buddy_alloc(order_to_bytes(size_order+1)))];
-				int page_index = left->page_index + (order_to_bytes(size_order)/PAGE_SIZE);
+				left_page = &g_pages[ADDR_TO_PAGE(buddy_alloc(order_to_bytes(smallest_order+1)))];
+				int page_index = left_page->page_index + (order_to_bytes(smallest_order)/PAGE_SIZE);
 				right_page = &g_pages[page_index];
-				list_add(&(right_page->list), &free_area[size_order]);
+				list_add(&(right_page->list), &free_area[smallest_order]);
 
 			}
-			left_page->block_size = size_order;
+			left_page->block_size = smallest_order;
 			return PAGE_TO_ADDR (left_page->page_index);
 		}
 	}
@@ -213,7 +213,7 @@ void buddy_free(void *addr)
 
 	page_t * page = NULL;
 
-	struct list_head current_list;
+	struct list_head* current_list;
 
 	int count = 0;
 	while(1)
@@ -221,14 +221,14 @@ void buddy_free(void *addr)
 		page = NULL;
 
 
-		list_for_each(current_list, &free_area[g_pages[ADDR_TO_PAGE(addr).block_size + count ]])
+		list_for_each(current_list, &free_area[g_pages[ADDR_TO_PAGE(addr)].block_size + count ])
 		{
 			page = list_entry(current_list, page_t, list);
 			if (page = NULL)
 			{
 				break;
 			}
-			else if (page->page_address == BUDDY_ADDR(addr , g_pages[ADDR_TO_PAGE(addr).block_size + count]))
+			else if (page->page_address == BUDDY_ADDR(addr , g_pages[ADDR_TO_PAGE(addr)].block_size + count))
 			{
 				break;
 			}
@@ -238,15 +238,15 @@ void buddy_free(void *addr)
 		if ( page == NULL )
 		{
 			g_pages[ADDR_TO_PAGE(addr)].block_size = -1;
-			list_add(&g_pages[ADDR_TO_PAGE(addr)].list, &free_area[ADDR_TO_PAGE(addr).block_size + count]);
-			return void;
+			list_add(&g_pages[ADDR_TO_PAGE(addr)].list, &free_area[g_pages[ADDR_TO_PAGE(addr)].block_size + count]);
+			return;
 
 		}
-		else if ( page->page_address != BUDDY_ADDR(addr, ADDR_TO_PAGE(addr).block_size + count))
+		else if ( page->page_address != BUDDY_ADDR(addr, g_pages[ADDR_TO_PAGE(addr)].block_size + count))
 		{
-			g_pages[ADDR_TO_PAGE(addr).block_size + count].block_size = INT_MIN;
-			list_add(&g_pages[ADDR_TO_PAGE(addr)].list, &free_area[ADDR_TO_PAGE(addr).block_size + count]);
-			return void;
+			g_pages[ADDR_TO_PAGE(addr)].block_size = INT_MIN;
+			list_add(&g_pages[ADDR_TO_PAGE(addr)].list, &free_area[g_pages[ADDR_TO_PAGE(addr)].block_size + count]);
+			return;
 		}
 
 
