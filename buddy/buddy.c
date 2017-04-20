@@ -199,25 +199,17 @@ void *buddy_alloc(int size)
 
 
 			/* If the block is the same size as what we need it's easy */
-			#if USE_DEBUG
-			      printf("%s\n", "3");
-			#endif
+
 			if(i == smallest_order)
 			{
-				#if USE_DEBUG
-				      printf("%s\n", "4");
-				#endif
+
 				left_page = list_entry(free_area[i].next, page_t, list);
 				list_del(&(left_page->list));
-				#if USE_DEBUG
-				      printf("%s\n", "5");
-				#endif
+
 			}
 			/* Otherwise we have to split up the block recursively */
 			else{
-				#if USE_DEBUG
-				      printf("%s\n", "6");
-				#endif
+
 				left_page = &g_pages[ADDR_TO_PAGE(buddy_alloc(order_to_bytes(smallest_order+1)))];
 				right_page = &g_pages[left_page->page_index + (order_to_bytes(smallest_order)/PAGE_SIZE)];
 				list_add(&(right_page->list), &free_area[smallest_order]);
@@ -226,17 +218,13 @@ void *buddy_alloc(int size)
 				#endif
 
 			}
-			#if USE_DEBUG
-			      printf("%s\n", "8");
-			#endif
+
 			left_page->block_size = smallest_order;
 			return PAGE_TO_ADDR (left_page->page_index);
 
 		}
 	}
-	#if USE_DEBUG
-	      printf("%s\n", "10");
-	#endif
+
 	return NULL;
 
 }
@@ -247,6 +235,21 @@ int order_to_bytes(int order){
 }
 
 
+
+page_t* whereisavialable(int size, void* buddy_address)
+{
+	struct list_head* list;
+	page_t * temp_page = NULL;
+	for (list = (&free_area[size])->next; list != (&free_area[size]); list = list->next)
+	{
+		temp_page = list_entry(list, page_t, list);
+		if (temp_page->page_address == BUDDY_ADDR(buddy_address , size))
+		{
+			return BUDDY_ADDR(buddy_address , size);
+		}
+	}
+	return NULL;
+}
 /**
  * Free an allocated memory block.
  *
@@ -261,104 +264,45 @@ int order_to_bytes(int order){
 	 int buddy_address = ADDR_TO_PAGE(addr);
 	 int buddy_block_size = g_pages[buddy_address].block_size;
 	 page_t * current_page = NULL;
- 	 struct list_head* current_list;
- 	#if USE_DEBUG
- 	      printf("%s\n", "12");
- 	#endif
+
 
 	 while(1)
 	 {
-		 list_for_each(current_list, &free_area[buddy_block_size])
- 		{
- 			#if USE_DEBUG
- 			      printf("%s\n", "14");
- 			#endif
- 			current_page = list_entry(current_list, page_t, list);
- 			#if USE_DEBUG
- 			      printf("%s\n", "15");
- 			#endif
- 			if (current_page == NULL)
- 			{
- 				#if USE_DEBUG
- 				      printf("%s\n", "16");
- 				#endif
- 				break;
- 			}
- 			else if (current_page->page_address == BUDDY_ADDR(addr , buddy_block_size))
- 			{
- 				#if USE_DEBUG
- 				      printf("%s\n", "17");
- 				#endif
- 				break;
- 			}
-
- 		}
+         	current_page = whereisavialable(buddy_block_size,addr);
+		#if USE_DEBUG
+  		      printf("%s%i\n","addr:",(int)addr );
+  		#endif
+  		#if USE_DEBUG
+  		      printf("%s%i\n","current_page->page_address:",(int)current_page->page_address );
+  		#endif
 
  		if ( current_page == NULL )
  		{
- 			#if USE_DEBUG
- 			      printf("%s\n", "18");
- 			#endif
  			g_pages[buddy_address].block_size = -1;
- 			#if USE_DEBUG
- 			      printf("%s\n", "18.5");
- 			#endif
  			list_add(&g_pages[buddy_address].list, &free_area[buddy_block_size]);
- 			#if USE_DEBUG
- 			      printf("%s\n", "19");
- 			#endif
  			return;
-
  		}
  		else if ( current_page->page_address != BUDDY_ADDR(addr, buddy_block_size))
  		{
- 			#if USE_DEBUG
- 			      printf("%s\n", "20");
- 			#endif
  			g_pages[buddy_address].block_size = -1;
  			list_add(&g_pages[buddy_address].list, &free_area[buddy_block_size]);
- 			#if USE_DEBUG
- 			      printf("%s\n", "21");
- 			#endif
  			return;
  		}
-
- 		#if USE_DEBUG
- 		      printf("%s\n", "22");
- 		#endif
-
- 		#if USE_DEBUG
- 		      printf("%s%i\n","addr:",(int)addr );
- 		#endif
- 		#if USE_DEBUG
- 		      printf("%s%i\n","current_page->page_address:",(int)current_page->page_address );
- 		#endif
- 		if(  addr > current_page->page_address )
- 		{
- 			#if USE_DEBUG
- 			      printf("%s\n", "23");
- 			#endif
-
- 			addr = current_page->page_address;
-			buddy_address = ADDR_TO_PAGE(addr);
-
- 		}
-
- 		list_del(&(current_page->list));
- 		#if USE_DEBUG
- 		      printf("%s\n", "24");
- 		#endif
-
-
-
-
-
-
-		 buddy_block_size = buddy_block_size + 1;
+		else
+		{
+			if( (char*) addr > current_page->page_address )
+	 		{
+	 			addr = current_page->page_address;
+				buddy_address = ADDR_TO_PAGE(current_page->page_address);
+	 		}
+	 		list_del(&(current_page->list));
+	 		#if USE_DEBUG
+	 		      printf("%s\n", "24");
+	 		#endif
+			buddy_block_size = buddy_block_size + 1;
+		}
 	 }
-
  }
-
 
 /**
  * Print the buddy system status---order oriented
