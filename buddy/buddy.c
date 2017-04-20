@@ -87,43 +87,37 @@ page_t g_pages[(1<<MAX_ORDER)/PAGE_SIZE];
  */
 void buddy_init()
 {
-	#if USE_DEBUG
-		printf("%s\n", "2");
-	#endif
-
-
-
-
 	int number_pages = (1<<MAX_ORDER) / PAGE_SIZE;
-	for (int i = 0; i < number_pages; i++) {
-		/* TODO: INITIALIZE PAGE STRUCTURES */
-
-		    (&g_pages[i].list)->next = (&g_pages[i].list);
-			(&g_pages[i].list)->prev = (&g_pages[i].list);
-			if ( i == 0)
-			{
-				g_pages[i].block_size = MAX_ORDER;
-			}
-			else
-			{
-				g_pages[i].block_size = INT_MIN;
-			}
-			g_pages[i].page_index = i;
-			g_pages[i].page_address = PAGE_TO_ADDR(i);
+	/* Loop through the number of pages */
+	for (int i = 0; i < number_pages; i++)
+	{
+		/* set the previous and the next values for the list */
+		(&g_pages[i].list)->next = (&g_pages[i].list);
+		(&g_pages[i].list)->prev = (&g_pages[i].list);
+		/* Start with the MAX_ORDER ortherwise set to MIN_INT */
+		if ( i == 0)
+		{
+			g_pages[i].block_size = MAX_ORDER;
+		}
+		else
+		{
+			g_pages[i].block_size = INT_MIN;
+		}
+		/* set the page index */
+		g_pages[i].page_index = i;
+		/* set the page address */
+		g_pages[i].page_address = PAGE_TO_ADDR(i);
 
 	}
 
 	/* initialize freelist */
-	for (int i = MIN_ORDER; i <= MAX_ORDER; i++) {
+	for (int i = MIN_ORDER; i <= MAX_ORDER; i++)
+	{
 		INIT_LIST_HEAD(&free_area[i]);
 	}
 
 	/* add the entire memory as a freeblock */
 	list_add(&g_pages[0].list, &free_area[MAX_ORDER]);
-
-
-
-
 }
 
 /**
@@ -140,6 +134,7 @@ void buddy_init()
  * @param size size in bytes
  * @return memory block address
  */
+ 
 void *buddy_alloc(int size)
 {
 	//Check if the size is possible
@@ -187,6 +182,7 @@ void *buddy_alloc(int size)
 		#if USE_DEBUG
 			printf("%s%i\n","i:",i );
 		#endif
+		/* iterate over freelists */
 		if(!list_empty(&free_area[i]))
 		{
 
@@ -209,23 +205,20 @@ void *buddy_alloc(int size)
 			}
 
 			left_page->block_size = smallest_order;
+			/* Return the address */
 			return PAGE_TO_ADDR (left_page->page_index);
 
 		}
 	}
-
+	/* Return NULL, where there is not enough space available */
 	return NULL;
 
 }
-
 
 int order_to_bytes(int order)
 {
 	return (1 << order);
 }
-
-
-
 
 /**
  * Finds the available space for buddy

@@ -1,2 +1,4 @@
-a = alloc(44K)
+a = alloc(500K)
+b = alloc(500K)
+c = alloc(500K)
 free(a)
