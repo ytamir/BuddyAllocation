@@ -333,12 +333,14 @@ int order_to_bytes(int order){
  		#if USE_DEBUG
  		      printf("%s%i\n","current_page->page_address:",(int)current_page->page_address );
  		#endif
- 		if( (int) addr > (int) current_page->page_address )
+ 		if(  addr > current_page->page_address )
  		{
  			#if USE_DEBUG
  			      printf("%s\n", "23");
  			#endif
+
  			addr = current_page->page_address;
+			buddy_address = ADDR_TO_PAGE(addr);
 
  		}
 
@@ -357,7 +359,7 @@ int order_to_bytes(int order){
 
  }
 
-		
+
 /**
  * Print the buddy system status---order oriented
  *
