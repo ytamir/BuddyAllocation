@@ -142,24 +142,19 @@ void buddy_init()
  */
 void *buddy_alloc(int size)
 {
-	#if USE_DEBUG
-		printf("%s\n", "1");
-	#endif
-
-	/* TODO: IMPLEMENT THIS FUNCTION */
-
 	//Check if the size is possible
-	#if USE_DEBUG
-		printf("%s%i\n","Size:",size );
-	#endif
-
-	//printf("%s\n%i\n","MAX_ORDER:",MAX_ORDER );
-
-	if(size > order_to_bytes(MAX_ORDER)){
+	if(size > order_to_bytes(MAX_ORDER))
+	{
+		#if USE_DEBUG
+			printf("%s\n","Error this won't Work" );
+		#endif
 		return NULL;
 	}
 	else if (size < 1)
 	{
+		#if USE_DEBUG
+			printf("%s\n","Error this won't Work" );
+		#endif
 		return NULL;
 	}
 
@@ -167,56 +162,50 @@ void *buddy_alloc(int size)
 	int smallest_alloc = order_to_bytes(MIN_ORDER);
 	int smallest_order = MIN_ORDER;
 
-	while(size > smallest_alloc && smallest_order <= MAX_ORDER){
+	/*Loop to find the correct place for the buddy*/
+	while(size > smallest_alloc && smallest_order <= MAX_ORDER)
+	{
 		#if USE_DEBUG
 		printf("%s%i\n","smallest_order:",smallest_order );
 		printf("%s%i\n","smallest_alloc:",smallest_alloc );
 		#endif
 
+		/* increment the values */
 		smallest_order++;
 		smallest_alloc = order_to_bytes(smallest_order);
 	}
-
 	/* For each memory size possible, try to allocate or split up memory */
-	for(int i=smallest_order; i <= MAX_ORDER;i++){
+	for(int i=smallest_order; i <= MAX_ORDER;i++)
+	{
 
 		/**
-		 *	If there is an available block of the right size, start allocating
-		 *
-		 *	Note: the for loop starts with the smallest size possible and goes
-		 *	up to the greatest size possible
-		 */
-		 #if USE_DEBUG
-	 		printf("%s%i\n","i:",i );
-	 	 #endif
-
-
-		if(!list_empty(&free_area[i])){
+		*	If there is an available block of the right size, start allocating
+		*
+		*	Note: the for loop starts with the smallest size possible and goes
+		*	up to the greatest size possible
+		*/
+		#if USE_DEBUG
+			printf("%s%i\n","i:",i );
+		#endif
+		if(!list_empty(&free_area[i]))
+		{
 
 			/* Variables used to partition */
 			page_t *left_page;
 			page_t *right_page;
 
-
 			/* If the block is the same size as what we need it's easy */
-
 			if(i == smallest_order)
 			{
-
 				left_page = list_entry(free_area[i].next, page_t, list);
 				list_del(&(left_page->list));
-
 			}
 			/* Otherwise we have to split up the block recursively */
-			else{
-
+			else
+			{
 				left_page = &g_pages[ADDR_TO_PAGE(buddy_alloc(order_to_bytes(smallest_order+1)))];
 				right_page = &g_pages[left_page->page_index + (order_to_bytes(smallest_order)/PAGE_SIZE)];
 				list_add(&(right_page->list), &free_area[smallest_order]);
-				#if USE_DEBUG
-				      printf("%s\n", "7");
-				#endif
-
 			}
 
 			left_page->block_size = smallest_order;
@@ -230,25 +219,39 @@ void *buddy_alloc(int size)
 }
 
 
-int order_to_bytes(int order){
+int order_to_bytes(int order)
+{
 	return (1 << order);
 }
 
 
 
+
+/**
+ * Finds the available space for buddy
+ *
+ * Name: whereisavialable(int size, void* addr)
+ */
 page_t* whereisavialable(int size, void* addr)
 {
+	/* Create a list that we will iterate through in search of similiar sized free area*/
 	struct list_head* l;
+	/* initialize a page which will be the return variable */
 	page_t * page = NULL;
+	/* iterate over the free_area list */
 	for (l = (&free_area[size])->next; l != (&free_area[size]); l = l->next)
 	{
+		/* temporarily set a page variable equal to the current list entry */
 		page = list_entry(l, page_t, list);
 
+		/* check if the list entry size is the same as buddy's size */
 		if (page->page_address == BUDDY_ADDR(addr , size))
 		{
+			/*return the list entry which is the same size as buddy's*/
 			return page;
 		}
 	}
+	/* return NULL if there is no similiarly sized list entries */
 	return NULL;
 }
 /**
@@ -260,46 +263,51 @@ page_t* whereisavialable(int size, void* addr)
  *
  * @param addr memory block address to be freed
  */
- void buddy_free(void *addr)
- {
-	 int buddy_address = ADDR_TO_PAGE(addr);
-	 int buddy_block_size = g_pages[buddy_address].block_size;
-	 page_t * current_page = NULL;
+void buddy_free(void *addr)
+{
+	/* Initialize variable to iterate and keep track of location */
+	/* Create a variable to house buddy's address */
+	int buddy_address = ADDR_TO_PAGE(addr);
+	/* Create a variable to house the block size , which will be incremented */
+	int buddy_block_size = g_pages[buddy_address].block_size;
+	/* Create a page_t variable to house the location of whether buddy has a similiar size address */
+	page_t * current_page;
 
 
-	 while(1)
-	 {
-		 current_page = whereisavialable(buddy_block_size,addr);
+	/* loop through the possible values that the block size could be */
+	while(buddy_block_size <= MAX_ORDER)
+	{
+		/* get the location of a same sized list item */
+		current_page = whereisavialable(buddy_block_size,addr);
 
- 		if ( current_page == NULL || current_page->page_address != BUDDY_ADDR(addr, buddy_block_size))
- 		{
- 			g_pages[buddy_address].block_size = -1;
- 			list_add(&g_pages[buddy_address].list, &free_area[buddy_block_size]);
- 			return;
- 		}
+		/* if there is no same sized location */
+		if ( current_page == NULL )
+		{
+			list_add(&g_pages[buddy_address].list, &free_area[buddy_block_size]);
+			return;
+		}
+		// an entry was found that is the same size as buddy
 		else
 		{
 			#if USE_DEBUG
-	 		      printf("%s%i\n","addr:",(int)addr );
-	 		#endif
-	 		#if USE_DEBUG
-	 		      printf("%s%i\n","current_page->page_address:",(int)current_page->page_address );
-	 		#endif
-	 		if( (char*) addr > current_page->page_address )
-	 		{
-	 			addr = current_page->page_address;
+				printf("%s%i\n","addr:",(int)addr );
+			#endif
+			#if USE_DEBUG
+				printf("%s%i\n","current_page->page_address:",(int)current_page->page_address );
+			#endif
+			/* increment the address */
+			if( (char*) addr > current_page->page_address )
+			{
+				addr = current_page->page_address;
 				buddy_address = ADDR_TO_PAGE(current_page->page_address);
-	 		}
-	 		list_del(&(current_page->list));
-	 		#if USE_DEBUG
-	 		      printf("%s\n", "24");
-	 		#endif
-			 buddy_block_size = buddy_block_size + 1;
-		 }
+			}
+			/* Delete the current list entry */
+			list_del(&(current_page->list));
+			/* check the next size up of the block sizes */
+			buddy_block_size = buddy_block_size + 1;
 		}
-
-
- }
+	}
+}
 
 
 /**
