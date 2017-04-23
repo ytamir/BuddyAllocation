@@ -170,13 +170,13 @@ void *buddy_alloc(int size)
 			alloc_size++;
 		}
 
-		/* iterate over freelists */
+		/* If the given size is free, we can allocate */
 		else if(!list_empty(&free_area[i]))
 		{
 			/* Variable used to partition */
 			page_t *block;
 
-			/* If the smallest block size possible is not found, use recursive strategy */
+			/* If the allocation size is not found, use recursive strategy */
 			if(i != alloc_size)
 			{
 				block = &g_pages[ADDR_TO_PAGE(buddy_alloc(order_to_bytes(alloc_size+1)))];
@@ -184,7 +184,7 @@ void *buddy_alloc(int size)
 				int buddy_location = block->page_index + order_to_bytes(alloc_size)/PAGE_SIZE;
 				list_add(&(g_pages[buddy_location].list), &free_area[alloc_size]);
 			}
-			/* Otherwise, update free_area and store the memory location */
+			/* Otherwise, update free_area */
 			else
 			{
 				block = list_entry(free_area[i].next, page_t, list);
