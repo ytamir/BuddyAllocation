@@ -156,18 +156,12 @@ void *buddy_alloc(int size)
 	/* Used to store the minimal order for allocation*/
 	int smallest_order = MIN_ORDER;
 
-	/*Loop to find smallest order value*/
-	while(size > order_to_bytes(smallest_order))
-	{
-		smallest_order++;
-	}
-
 	#if USE_DEBUG
 	printf("%s%i\n","smallest_order:",smallest_order );
 	#endif
 
 	/* For each memory size possible, try to allocate or split up memory */
-	for(int i=smallest_order; i <= MAX_ORDER;i++)
+	for(int i=MIN_ORDER; i <= MAX_ORDER;i++)
 	{
 
 		/**
@@ -179,8 +173,15 @@ void *buddy_alloc(int size)
 		#if USE_DEBUG
 			printf("%s%i\n","i:",i );
 		#endif
+
+		/* This is used to find the smallest block size possible */
+		if(size > order_to_bytes(smallest_order))
+		{
+			smallest_order++;
+		}
+
 		/* iterate over freelists */
-		if(!list_empty(&free_area[i]))
+		else if(!list_empty(&free_area[i]))
 		{
 			/* Variable used to partition */
 			page_t *block;

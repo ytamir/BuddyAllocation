@@ -44,6 +44,11 @@ all: doc $(PROGNAME)
 test: $(PROGNAME)
 	./run_tests.bash -d
 
+test2: $(PROGNAME)
+	./buddy -i test-files/test_t3.txt > myfile.txt
+	./buddy2 -i test-files/test_t3.txt > expected.txt
+	diff myfile.txt expected.txt
+
 # Build the documentation for the project
 doc: $(CFILES) $(HFILES) $(DOXYGENCONF) README.md
 	doxygen $(DOXYGENCONF)
