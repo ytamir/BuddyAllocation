@@ -120,6 +120,7 @@ void buddy_init()
 	list_add(&g_pages[0].list, &free_area[MAX_ORDER]);
 }
 
+
 /**
  * Allocate a memory block.
  *
@@ -134,7 +135,6 @@ void buddy_init()
  * @param size size in bytes
  * @return memory block address
  */
-
 void *buddy_alloc(int size)
 {
 	//Check if the size is possible
@@ -154,30 +154,20 @@ void *buddy_alloc(int size)
 	}
 
 	/* Used to store the minimal order for allocation*/
-	int smallest_order = MIN_ORDER;
-
-	#if USE_DEBUG
-	printf("%s%i\n","smallest_order:",smallest_order );
-	#endif
+	int alloc_size = MIN_ORDER;
 
 	/* For each memory size possible, try to allocate or split up memory */
 	for(int i=MIN_ORDER; i <= MAX_ORDER;i++)
 	{
 
-		/**
-		*	If there is an available block of the right size, start allocating
-		*
-		*	Note: the for loop starts with the smallest size possible and goes
-		*	up to the greatest size possible
-		*/
 		#if USE_DEBUG
 			printf("%s%i\n","i:",i );
 		#endif
 
 		/* This is used to find the smallest block size possible */
-		if(size > order_to_bytes(smallest_order))
+		if(size > order_to_bytes(alloc_size))
 		{
-			smallest_order++;
+			alloc_size++;
 		}
 
 		/* iterate over freelists */
@@ -186,12 +176,13 @@ void *buddy_alloc(int size)
 			/* Variable used to partition */
 			page_t *block;
 
-			/* If the smallest block size possible is not found, use recursive strategy*/
-			if(i != smallest_order)
+			/* If the smallest block size possible is not found, use recursive strategy */
+			if(i != alloc_size)
 			{
-				block = &g_pages[ADDR_TO_PAGE(buddy_alloc(order_to_bytes(smallest_order+1)))];
-				int buddy_location = block->page_index + order_to_bytes(smallest_order)/PAGE_SIZE;
-				list_add(&(g_pages[buddy_location].list), &free_area[smallest_order]);
+				block = &g_pages[ADDR_TO_PAGE(buddy_alloc(order_to_bytes(alloc_size+1)))];
+
+				int buddy_location = block->page_index + order_to_bytes(alloc_size)/PAGE_SIZE;
+				list_add(&(g_pages[buddy_location].list), &free_area[alloc_size]);
 			}
 			/* Otherwise, update free_area and store the memory location */
 			else
@@ -200,7 +191,7 @@ void *buddy_alloc(int size)
 				list_del(&(block->list));
 			}
 
-			block->block_size = smallest_order;
+			block->block_size = alloc_size;
 			/* Return the address */
 			return PAGE_TO_ADDR (block->page_index);
 
