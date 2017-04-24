@@ -120,9 +120,11 @@ void buddy_init()
 	list_add(&g_pages[0].list, &free_area[MAX_ORDER]);
 }
 
-/**
- *  Split a block of memory and update the free list with the buddy
- */
+ /**
+  * Split a block of memory and update the free list with the buddy
+  * @param order order of memory size
+  * @param index of the page
+  */
 void split(int order,int index)
 {
 	page_t* buddy = &g_pages[ADDR_TO_PAGE(BUDDY_ADDR(PAGE_TO_ADDR(index), order))];
@@ -204,6 +206,11 @@ void *buddy_alloc(int size)
 
 }
 
+/**
+ * Converts order to number of bytes, basically 2 to the nth power
+ * @param order order of memory size
+ * @return memory size in bytes
+ */
 int order_to_bytes(int order)
 {
 	return (1 << order);
