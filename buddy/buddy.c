@@ -8,7 +8,7 @@
 /**************************************************************************
  * Conditional Compilation Options
  **************************************************************************/
-#define USE_DEBUG 0
+#define USE_DEBUG 1
 
 /**************************************************************************
  * Included Files
@@ -24,8 +24,6 @@
 /**************************************************************************
  * Public Definitions
  **************************************************************************/
-#define WRONG NULL
-#define VERYWRONG break
 
 #define MIN_ORDER 12
 #define MAX_ORDER 20
@@ -188,6 +186,11 @@ void *buddy_alloc(int size)
 		printf("Block size: %d\n",min_block_size);
 	#endif
 
+	if(min_block_size == MAX_ORDER && list_empty(&free_area[MAX_ORDER]))
+	{
+		return NULL;
+	}
+
 	/* Update the free list for the block that we are allocating */
 	page_t* page = list_entry(free_area[min_block_size].next, page_t, list);
 	int index = page->page_index;
@@ -203,7 +206,6 @@ void *buddy_alloc(int size)
 	/* Update the block size and return the address */
 	page->block_size = alloc_size;
 	return PAGE_TO_ADDR (page->page_index);
-
 }
 
 /**
