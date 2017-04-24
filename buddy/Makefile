@@ -44,9 +44,11 @@ all: doc $(PROGNAME)
 test: $(PROGNAME)
 	./run_tests.bash -d
 
+TEST_FILE = test-files/test_t3.txt
+
 test2: $(PROGNAME)
-	./buddy -i test-files/test_t3.txt > myfile.txt
-	./buddy2 -i test-files/test_t3.txt > expected.txt
+	./buddy -i $(TEST_FILE) > myfile.txt
+	./buddy2 -i $(TEST_FILE) > expected.txt
 	diff myfile.txt expected.txt
 
 # Build the documentation for the project
