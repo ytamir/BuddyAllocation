@@ -120,6 +120,15 @@ void buddy_init()
 	list_add(&g_pages[0].list, &free_area[MAX_ORDER]);
 }
 
+/**
+ *  Split a block of memory and update the free list with the buddy
+ */
+void split(int order,int index)
+{
+	page_t* buddy = &g_pages[ADDR_TO_PAGE(BUDDY_ADDR(PAGE_TO_ADDR(index), order))];
+	list_add(&(buddy->list),&free_area[order]);
+}
+
 
 /**
  * Allocate a memory block.
@@ -155,50 +164,43 @@ void *buddy_alloc(int size)
 
 	/* Used to store the minimal order for allocation*/
 	int alloc_size = MIN_ORDER;
-
-	/* For each memory size possible, try to allocate or split up memory */
-	for(int i=MIN_ORDER; i <= MAX_ORDER;i++)
+	/* This is used to find the smallest block size possible */
+	while(size > order_to_bytes(alloc_size) && alloc_size < MAX_ORDER)
 	{
-
-		#if USE_DEBUG
-			printf("%s%i\n","i:",i );
-		#endif
-
-		/* This is used to find the smallest block size possible */
-		if(size > order_to_bytes(alloc_size))
-		{
-			alloc_size++;
-		}
-
-		/* If the given size is free, we can allocate */
-		else if(!list_empty(&free_area[i]))
-		{
-			/* Variable used to partition */
-			page_t *block;
-
-			/* If the allocation size is not found, use recursive strategy */
-			if(i != alloc_size)
-			{
-				block = &g_pages[ADDR_TO_PAGE(buddy_alloc(order_to_bytes(alloc_size+1)))];
-
-				int buddy_location = block->page_index + order_to_bytes(alloc_size)/PAGE_SIZE;
-				list_add(&(g_pages[buddy_location].list), &free_area[alloc_size]);
-			}
-			/* Otherwise, update free_area */
-			else
-			{
-				block = list_entry(free_area[i].next, page_t, list);
-				list_del(&(block->list));
-			}
-
-			block->block_size = alloc_size;
-			/* Return the address */
-			return PAGE_TO_ADDR (block->page_index);
-
-		}
+		alloc_size++;
 	}
-	/* Return NULL, where there is not enough space available */
-	return NULL;
+
+	#if USE_DEBUG
+		printf("Alloc size: %d\n",alloc_size);
+	#endif
+
+	/* Used to find the smallest free block available */
+	int min_block_size = alloc_size;
+	/* Loop to find the appropriate value */
+	while(list_empty(&free_area[min_block_size]) && min_block_size < MAX_ORDER)
+	{
+		min_block_size++;
+	}
+
+	#if USE_DEBUG
+		printf("Block size: %d\n",min_block_size);
+	#endif
+
+	/* Update the free list for the block that we are allocating */
+	page_t* page = list_entry(free_area[min_block_size].next, page_t, list);
+	int index = page->page_index;
+	list_del_init(&(page->list));
+
+	/* If the smallest free block size is bigger than the allocation size, split it up */
+	while(min_block_size > alloc_size)
+	{
+		min_block_size--;
+		split(min_block_size,index);
+	}
+
+	/* Update the block size and return the address */
+	page->block_size = alloc_size;
+	return PAGE_TO_ADDR (page->page_index);
 
 }
 
